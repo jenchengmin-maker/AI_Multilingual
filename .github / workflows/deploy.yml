@@ -1,1 +1,46 @@
+name: Deploy to GitHub Pages
 
+on:
+  push:
+    branches: ["main"]  # 如果您的主分支是 master，請將這裡改為 master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      # ★★★ 注入 API Key 的步驟 ★★★
+      - name: Inject API Key
+        env:
+          # 這裡會讀取您在 GitHub Settings > Secrets 設定的金鑰
+          API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          # 確保這裡的佔位符 (YOUR_GEMINI_API_KEY_PLACEHOLDER) 與 index.html 內的一致
+          sed -i "s|YOUR_GEMINI_API_KEY_PLACEHOLDER|$API_KEY|g" index.html
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
