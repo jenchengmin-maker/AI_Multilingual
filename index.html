@@ -1,1 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>即時多語新聞編譯播報系統/Real-Time Multilingual News Automation System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* 自定義checkbox樣式 */
+        .custom-checkbox {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            display: inline-block;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid #ccc;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            position: relative;
+            outline: none;
+            transition: all 0.2s;
+        }
+        .custom-checkbox:checked {
+            background-color: #3b82f6;
+            border-color: #3b82f6;
+        }
+        .custom-checkbox:checked::after {
+            content: '✓';
+            color: white;
+            font-size: 1rem;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        /* 編輯模式下的樣式 */
+        .editable {
+            outline: none;
+        }
+        .editable:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-6 sm:p-10 transition-colors duration-300">
 
+    <div class="max-w-4xl mx-auto bg-white dark:bg-gray-800 shadow-xl rounded-2xl p-6 sm:p-8 space-y-8">
+        <header class="text-center">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-blue-600 dark:text-blue-400">[即時多語新聞翻譯與語音播放系統] [Real-Time Multilingual News Automation System]</h1>
+            <p class="mt-2 text-gray-500 dark:text-gray-400 text-lg">請輸入繁體中文內容，即可翻譯並播放語音。</p>
+            <p class="mt-2 text-gray-500 dark:text-gray-400 text-lg">By James Jen</p> 
+        </header>
+
+        <div class="space-y-4">
+            <div>
+                <label for="title-input" class="block text-2xl font-bold">新聞標題</label>
+                <input type="text" id="title-input" class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-2xl font-semibold transition-all duration-200" placeholder="請在此輸入新聞標題...">
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label for="date-input" class="block text-sm font-bold">編輯日期與時間</label>
+                    <div class="flex space-x-2">
+                        <input type="date" id="date-input" class="w-1/2 px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all duration-200">
+                        <input type="time" id="time-input" class="w-1/2 px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all duration-200">
+                    </div>
+                </div>
+                
+                <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-4 sm:space-y-0">
+                    <div class="w-full sm:w-1/2">
+                        <label for="source-input" class="block text-sm font-bold">新聞引據</label>
+                        <input type="text" id="source-input" class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all duration-200" placeholder="請在此輸入新聞引據...">
+                    </div>
+                    
+                    <div class="w-full sm:w-1/2">
+                        <label for="editor-input" class="block text-sm font-bold">撰稿編輯</label>
+                        <input type="text" id="editor-input" class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all duration-200" placeholder="請在此輸入編輯名稱...">
+                    </div>
+                </div>
+            </div>
+            
+            <div>
+                <label for="body-input" class="block text-lg font-bold">新聞內文</label>
+                <textarea id="body-input" rows="6" class="w-full px-4 py-3 rounded-lg border-2 border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg transition-all duration-200" placeholder="請在此輸入您想翻譯的新聞內容..."></textarea>
+            </div>
+            
+            <div>
+                <label class="block text-lg font-bold mb-2">選擇翻譯語種 (可複選)</label>
+                <div id="language-select-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-zh-Hant" value="中文" class="custom-checkbox">
+                        <label for="lang-zh-Hant" class="text-sm cursor-pointer">中文</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-en" value="英語" class="custom-checkbox">
+                        <label for="lang-en" class="text-sm cursor-pointer">英語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-id" value="印尼語" class="custom-checkbox">
+                        <label for="lang-id" class="text-sm cursor-pointer">印尼語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-th" value="泰語" class="custom-checkbox">
+                        <label for="lang-th" class="text-sm cursor-pointer">泰語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-vi" value="越南語" class="custom-checkbox">
+                        <label for="lang-vi" class="text-sm cursor-pointer">越南語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-ja" value="日語" class="custom-checkbox">
+                        <label for="lang-ja" class="text-sm cursor-pointer">日語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-ko" value="韓語" class="custom-checkbox">
+                        <label for="lang-ko" class="text-sm cursor-pointer">韓語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-es" value="西班牙語" class="custom-checkbox">
+                        <label for="lang-es" class="text-sm cursor-pointer">西班牙語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-fr" value="法語" class="custom-checkbox">
+                        <label for="lang-fr" class="text-sm cursor-pointer">法語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-de" value="德語" class="custom-checkbox">
+                        <label for="lang-de" class="text-sm cursor-pointer">德語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-ms" value="馬來語" class="custom-checkbox">
+                        <label for="lang-ms" class="text-sm cursor-pointer">馬來語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-ru" value="俄語" class="custom-checkbox">
+                        <label for="lang-ru" class="text-sm cursor-pointer">俄語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-my" value="緬甸語" class="custom-checkbox">
+                        <label for="lang-my" class="text-sm cursor-pointer">緬甸語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-km" value="柬埔寨語" class="custom-checkbox">
+                        <label for="lang-km" class="text-sm cursor-pointer">柬埔寨語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-fil" value="菲律賓語(Tagalog)" class="custom-checkbox">
+                        <label for="lang-fil" class="text-sm cursor-pointer">菲律賓語(Tagalog)</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-mn" value="蒙古語" class="custom-checkbox">
+                        <label for="lang-mn" class="text-sm cursor-pointer">蒙古語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-uk" value="烏克蘭語" class="custom-checkbox">
+                        <label for="lang-uk" class="text-sm cursor-pointer">烏克蘭語</label>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <input type="checkbox" id="lang-ar" value="阿拉伯語" class="custom-checkbox">
+                        <label for="lang-ar" class="text-sm cursor-pointer">阿拉伯語</label>
+                    </div>
+                </div>
+                <div class="mt-4 flex space-x-2">
+                    <button id="select-all-button" class="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
+                        全選
+                    </button>
+                    <button id="clear-all-button" class="px-4 py-2 text-sm bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg shadow hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors duration-200">
+                        清除
+                    </button>
+                </div>
+            </div>
+
+            <button id="translate-button" class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-md transition-transform duration-200 transform hover:scale-105 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                翻譯
+            </button>
+        </div>
+
+        <div id="results-container" class="space-y-6">
+            <h2 class="text-2xl sm:text-3xl font-bold text-center">翻譯結果</h2>
+            </div>
+    </div>
+
+    <div id="error-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden items-center justify-center p-4 z-50">
+        <div class="bg-red-500 text-white rounded-lg p-6 max-w-sm w-full text-center shadow-lg transform transition-transform duration-300 scale-100">
+            <p id="error-message" class="font-semibold text-lg"></p>
+            <button onclick="document.getElementById('error-modal').classList.add('hidden')" class="mt-4 px-4 py-2 bg-red-700 hover:bg-red-800 rounded-lg text-white font-bold">
+                關閉
+            </button>
+        </div>
+    </div>
+
+    <script type="module">
+        // 宣告 DOM 元素
+        const resultsContainer = document.getElementById('results-container');
+        const titleInput = document.getElementById('title-input');
+        const dateInput = document.getElementById('date-input');
+        const timeInput = document.getElementById('time-input');
+        const editorInput = document.getElementById('editor-input');
+        const sourceInput = document.getElementById('source-input');
+        const bodyInput = document.getElementById('body-input');
+        const translateButton = document.getElementById('translate-button');
+        const languageSelectContainer = document.getElementById('language-select-container');
+        const selectAllButton = document.getElementById('select-all-button');
+        const clearAllButton = document.getElementById('clear-all-button');
+        const errorModal = document.getElementById('error-modal');
+        const errorMessage = document.getElementById('error-message');
+
+        // ★★★ 請在此填入您的 API KEY ★★★
+        const API_KEY = "YOUR_GEMINI_API_KEY_PLACEHOLDER"; 
+
+        // 使用 Gemini 2.0 Flash Experimental 模型 (支援文字與原生音訊生成)
+        const MODEL_NAME = "gemini-2.0-flash-exp";
+
+        // 定義目標語言及其代碼
+        // 註：Gemini 2.0 的語音音色目前有 Puck, Charon, Kore, Fenrir, Aoede 等
+        const targetLanguages = {
+            '中文': { code: 'zh-TW', voice: 'Kore' },
+            '英語': { code: 'en-US', voice: 'Fenrir' },
+            '印尼語': { code: 'id-ID', voice: 'Puck' },
+            '泰語': { code: 'th-TH', voice: 'Charon' },
+            '越南語': { code: 'vi-VN', voice: 'Aoede' },
+            '日語': { code: 'ja-JP', voice: 'Kore' },
+            '韓語': { code: 'ko-KR', voice: 'Kore' }, // 韓語重複使用適合亞洲語系的音色
+            '西班牙語': { code: 'es-US', voice: 'Fenrir' },
+            '法語': { code: 'fr-FR', voice: 'Fenrir' },
+            '德語': { code: 'de-DE', voice: 'Fenrir' },
+            '馬來語': { code: 'ms-MY', voice: 'Puck' },
+            '俄語': { code: 'ru-RU', voice: 'Charon' },
+            '緬甸語': { code: 'my-MM', voice: 'Aoede' },
+            '柬埔寨語': { code: 'km-KH', voice: 'Aoede' },
+            '菲律賓語(Tagalog)': { code: 'fil-PH', voice: 'Puck' },
+            '蒙古語': { code: 'mn-MN', voice: 'Charon' },
+            '烏克蘭語': { code: 'uk-UA', voice: 'Fenrir' },
+            '阿拉伯語': { code: 'ar-EG', voice: 'Charon' }
+        };
+        
+        const translatedLabels = {
+            'zh-TW': { dateLabel: '編輯日期與時間', editorLabel: '撰稿編輯', sourceLabel: '新聞引據' },
+            'en-US': { dateLabel: 'Edit Date and Time', editorLabel: 'Editor', sourceLabel: 'News Source' },
+            'id-ID': { dateLabel: 'Tanggal dan Waktu Edit', editorLabel: 'Editor', sourceLabel: 'Sumber Berita' },
+            'th-TH': { dateLabel: 'วันที่และเวลาแก้ไข', editorLabel: 'ผู้แก้ไข', sourceLabel: 'แหล่งข่าว' },
+            'vi-VN': { dateLabel: 'Ngày và giờ chỉnh sửa', editorLabel: 'Biên tập viên', sourceLabel: 'Nguồn tin' },
+            'ja-JP': { dateLabel: '編集日付と時間', editorLabel: '編集者', sourceLabel: 'ニュースソース' },
+            'ko-KR': { dateLabel: '편집 날짜 및 시간', editorLabel: '편집자', sourceLabel: '뉴스 출처' },
+            'es-US': { dateLabel: 'Fecha y hora de edición', editorLabel: 'Editor', sourceLabel: 'Fuente de noticias' },
+            'fr-FR': { dateLabel: 'Date et heure de modification', editorLabel: 'Éditeur', sourceLabel: 'Source de nouvelles' },
+            'de-DE': { dateLabel: 'Bearbeitungsdatum und -zeit', editorLabel: 'Redakteur', sourceLabel: 'Nachrichtenquelle' },
+            'ms-MY': { dateLabel: 'Tarikh dan Masa Suntingan', editorLabel: 'Penyunting', sourceLabel: 'Sumber Berita' },
+            'ru-RU': { dateLabel: 'Дата и время редактирования', editorLabel: 'Редактор', sourceLabel: 'Источник новостей' },
+            'my-MM': { dateLabel: 'တည်းဖြတ်သည့်ရက်စွဲနှင့်အချိန်', editorLabel: 'အယ်ဒီတာ', sourceLabel: 'သတင်းရင်းမြစ်' },
+            'km-KH': { dateLabel: 'កាលបរិច្ឆេទ និង ពេលវេលាកែសម្រួល', editorLabel: 'អ្នកកែសម្រួល', sourceLabel: 'ប្រភពព័ត៌មាន' },
+            'fil-PH': { dateLabel: 'Petsa at Oras ng Pag-edit', editorLabel: 'Editor', sourceLabel: 'Pinagmulan ng Balita' },
+            'mn-MN': { dateLabel: 'Зассан огноо, цаг', editorLabel: 'Редактор', sourceLabel: 'Мэдээний эх сурвал' },
+            'uk-UA': { dateLabel: 'Дата та час редагування', editorLabel: 'Редактор', sourceLabel: 'Джерело новин' },
+            'ar-EG': { dateLabel: 'تاريخ ووقت التعديل', editorLabel: 'المحرر', sourceLabel: 'مصدر الأخبار' }
+        };
+
+        let wavBlobs = {}; 
+
+        // 輔助函式：Base64 轉 ArrayBuffer
+        function base64ToArrayBuffer(base64) {
+            const binaryString = atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // 輔助函式：PCM 轉 WAV
+        function pcmToWav(pcmData, sampleRate) {
+            const numSamples = pcmData.length;
+            const headerSize = 44;
+            const buffer = new ArrayBuffer(headerSize + numSamples * 2);
+            const view = new DataView(buffer);
+
+            let offset = 0;
+            view.setUint32(offset, 0x52494646, false); offset += 4; // 'RIFF'
+            view.setUint32(offset, 36 + numSamples * 2, true); offset += 4; // file size
+            view.setUint32(offset, 0x57415645, false); offset += 4; // 'WAVE'
+            view.setUint32(offset, 0x666d7420, false); offset += 4; // 'fmt '
+            view.setUint32(offset, 16, true); offset += 4; // chunk size
+            view.setUint16(offset, 1, true); offset += 2; // audio format (1 PCM)
+            view.setUint16(offset, 1, true); offset += 2; // num channels (1)
+            view.setUint32(offset, sampleRate, true); offset += 4; // sample rate
+            view.setUint32(offset, sampleRate * 2, true); offset += 4; // byte rate
+            view.setUint16(offset, 2, true); offset += 2; // block align
+            view.setUint16(offset, 16, true); offset += 2; // bits per sample
+            view.setUint32(offset, 0x64617461, false); offset += 4; // 'data'
+            view.setUint32(offset, numSamples * 2, true); offset += 4; // data size
+
+            for (let i = 0; i < numSamples; i++) {
+                view.setInt16(offset, pcmData[i], true);
+                offset += 2;
+            }
+            return new Blob([buffer], { type: 'audio/wav' });
+        }
+
+        function showErrorMessage(message) {
+            errorMessage.textContent = message;
+            errorModal.classList.remove('hidden');
+        }
+
+        // 翻譯功能函式
+        async function translateText(text, targetLangCode, targetLangName) {
+            let chatHistory = [];
+            // Prompt 設計：要求嚴格的標籤格式以便解析
+            const prompt = `Translate the following Traditional Chinese news report into ${targetLangName}. 
+            The style should be formal news report.
+            IMPORTANT: Output the result using these EXACT labels (do not use markdown bolding like **label**):
+            title: [Translated Title]
+            date: [Translated Date]
+            source: [Translated Source]
+            editor: [Translated Editor]
+            body: [Translated Body]
+
+            Original Text:
+            ${text}`;
+            
+            chatHistory.push({ role: "user", parts: [{ text: prompt }] });
+            const payload = { contents: chatHistory };
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
+            
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API response error: ${response.statusText} (${errorText})`);
+                }
+                
+                const result = await response.json();
+                if (result.candidates?.[0]?.content?.parts?.[0]) {
+                    return result.candidates[0].content.parts[0].text;
+                } else {
+                    throw new Error("Translation result is empty.");
+                }
+            } catch (error) {
+                console.error('API 呼叫失敗:', error);
+                throw error;
+            }
+        }
+
+        // 解析翻譯文字
+        function parseTranslatedText(text) {
+            const extract = (label) => {
+                // Regex: 尋找 "label:" (允許前後有 Markdown 符號) 直到下一個標籤或結尾
+                const regex = new RegExp(`(?:^|\\n)\\s*(?:\\*\\*)?${label}(?:\\*\\*)?:\\s*([\\s\\S]*?)(?=\\n\\s*(?:\\*\\*)?(?:title|date|source|editor|body)(?:\\*\\*)?:|$)`, 'i');
+                const match = text.match(regex);
+                return match ? match[1].trim() : '';
+            };
+
+            const translatedTitle = extract('title');
+            const translatedDate = extract('date');
+            const translatedSource = extract('source');
+            const translatedEditor = extract('editor');
+            const translatedBody = extract('body') || text; // Fallback: 若解析失敗，假設全文為 body
+
+            return [translatedTitle, translatedDate, translatedSource, translatedEditor, translatedBody];
+        }
+
+        // 主翻譯流程
+        async function translateTextAndDisplay() {
+            const title = titleInput.value.trim();
+            const date = dateInput.value.trim();
+            const time = timeInput.value.trim();
+            const editor = editorInput.value.trim();
+            const source = sourceInput.value.trim();
+            const body = bodyInput.value.trim();
+            const selectedLanguages = Array.from(document.querySelectorAll('#language-select-container input[type="checkbox"]:checked')).map(c => c.value);
+
+            if (selectedLanguages.length === 0) {
+                showErrorMessage('請選擇至少一個要翻譯的語種。');
+                return;
+            }
+
+            if (!title && !date && !time && !editor && !source && !body) {
+                showErrorMessage('請輸入您想翻譯的內容。');
+                return;
+            }
+
+            const dateAndTime = date && time ? `${date} ${time}` : date || time;
+            const allText = `title: ${title}\ndate: ${dateAndTime}\nsource: ${source}\neditor: ${editor}\nbody: ${body}`;
+
+            translateButton.disabled = true;
+            translateButton.textContent = '翻譯中...';
+            resultsContainer.innerHTML = '';
+            wavBlobs = {};
+
+            try {
+                for (const langName of selectedLanguages) {
+                    const lang = targetLanguages[langName];
+                    let tTitle, tDate, tSource, tEditor, tBody;
+
+                    if (langName === '中文') {
+                        tTitle = title; tDate = dateAndTime; tSource = source; tEditor = editor; tBody = body;
+                    } else {
+                        const translatedText = await translateText(allText, lang.code, langName);
+                        [tTitle, tDate, tSource, tEditor, tBody] = parseTranslatedText(translatedText);
+                    }
+                    createResultCard(langName, lang.code, lang.voice, tTitle, tDate, tSource, tEditor, tBody);
+                }
+            } catch (error) {
+                showErrorMessage(error.message);
+            } finally {
+                translateButton.disabled = false;
+                translateButton.textContent = '翻譯';
+            }
+        }
+
+        // 建立結果卡片 UI
+        function createResultCard(langName, langCode, voiceName, title, date, source, editor, body) {
+            let disclaimer = langCode === 'zh-TW' ? '此語音由AI生成，其內容為輸入之中文原文。' : '本翻譯由AI生成。';
+            const labels = translatedLabels[langCode] || translatedLabels['zh-TW'];
+            const card = document.createElement('div');
+            card.className = 'bg-gray-50 dark:bg-gray-700 p-6 rounded-lg shadow-md transition-all duration-300 hover:shadow-xl space-y-4';
+            const formattedBody = body.replace(/\n/g, '<br>');
+            
+            card.innerHTML = `
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-semibold">${langName}</h3>
+                    <div class="flex space-x-2">
+                        <button class="edit-button px-4 py-2 bg-gray-400 text-gray-800 rounded-md shadow-sm hover:bg-gray-500 flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-edit-3"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            <span>編輯</span>
+                        </button>
+                        <button class="confirm-button hidden px-4 py-2 bg-green-500 text-white rounded-md flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <span>確認</span>
+                        </button>
+                        <button class="cancel-button hidden px-4 py-2 bg-red-500 text-white rounded-md flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                            <span>取消</span>
+                        </button>
+                        <button class="play-button px-4 py-2 bg-blue-500 text-white rounded-md shadow-sm hover:bg-blue-600 flex items-center space-x-2" data-lang-code="${langCode}">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+                            <span>播放語音</span>
+                        </button>
+                        <button class="download-button px-4 py-2 bg-green-500 text-white rounded-md shadow-sm hover:bg-green-600 flex items-center space-x-2" disabled>
+                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            <span>下載 WAV</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <div class="editable-field"><h4 class="text-2xl font-bold text-blue-800 dark:text-blue-200 editable" data-field="title">${title}</h4></div>
+                    <div class="flex flex-col sm:flex-row sm:space-x-4 space-y-2 sm:space-y-0 text-gray-500 dark:text-gray-400 text-sm">
+                        <div class="editable-field"><p class="editable" data-field="date">${labels.dateLabel}: <span class="editable-content">${date}</span></p></div>
+                        <div class="editable-field"><p class="editable" data-field="source">${labels.sourceLabel}: <span class="editable-content">${source}</span></p></div>
+                        <div class="editable-field"><p class="editable" data-field="editor">${labels.editorLabel}: <span class="editable-content">${editor}</span></p></div>
+                    </div>
+                    <p class="text-xs text-red-400 dark:text-red-300 italic">${disclaimer}</p>
+                    <div class="editable-field"><div class="translated-text text-gray-700 dark:text-gray-200 text-lg leading-relaxed editable" data-field="body">${formattedBody}</div></div>
+                </div>
+            `;
+            resultsContainer.appendChild(card);
+
+            // 卡片邏輯初始化
+            const cardAudioPlayer = new Audio();
+            const editButton = card.querySelector('.edit-button');
+            const confirmButton = card.querySelector('.confirm-button');
+            const cancelButton = card.querySelector('.cancel-button');
+            const editableFields = card.querySelectorAll('.editable');
+            const playButton = card.querySelector('.play-button');
+            const downloadButton = card.querySelector('.download-button');
+            
+            const playSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg><span>播放語音</span>`;
+            const pauseSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-pause"><rect width="6" height="16" x="4" y="4"/><rect width="6" height="16" x="14" y="4"/></svg><span>暫停</span>`;
+            const loadingSvg = `<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg><span>載入中...</span>`;
+            const replaySvg = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-rotate-ccw"><path d="M21 12a9 9 0 1 1-9-9c2.6 0 4.9 1 6.7 2.8"/><path d="M17 12V3h4"/></svg><span>重新播放語音</span>`;
+
+            let originalContent = {};
+
+            editButton.addEventListener('click', () => {
+                if (!cardAudioPlayer.paused) cardAudioPlayer.pause();
+                editableFields.forEach(field => {
+                    originalContent[field.dataset.field] = field.innerHTML;
+                    field.contentEditable = true;
+                    field.classList.add('p-2', 'rounded-md', 'border', 'border-gray-400', 'bg-white', 'dark:bg-gray-600', 'editable-active');
+                });
+                editButton.classList.add('hidden');
+                confirmButton.classList.remove('hidden');
+                cancelButton.classList.remove('hidden');
+            });
+
+            confirmButton.addEventListener('click', () => {
+                const langCode = playButton.dataset.langCode;
+                // 若內容修改，清除舊音訊
+                if (wavBlobs[langCode]) URL.revokeObjectURL(cardAudioPlayer.src);
+                wavBlobs[langCode] = null;
+                
+                editableFields.forEach(field => {
+                    field.contentEditable = false;
+                    field.classList.remove('p-2', 'rounded-md', 'border', 'border-gray-400', 'bg-white', 'dark:bg-gray-600', 'editable-active');
+                });
+                editButton.classList.remove('hidden');
+                confirmButton.classList.add('hidden');
+                cancelButton.classList.add('hidden');
+                playButton.innerHTML = replaySvg;
+                downloadButton.disabled = true;
+            });
+
+            cancelButton.addEventListener('click', () => {
+                editableFields.forEach(field => {
+                    field.innerHTML = originalContent[field.dataset.field];
+                    field.contentEditable = false;
+                    field.classList.remove('p-2', 'rounded-md', 'border', 'border-gray-400', 'bg-white', 'dark:bg-gray-600', 'editable-active');
+                });
+                editButton.classList.remove('hidden');
+                confirmButton.classList.add('hidden');
+                cancelButton.classList.add('hidden');
+            });
+
+            playButton.addEventListener('click', async () => {
+                if (!cardAudioPlayer.paused) {
+                    cardAudioPlayer.pause();
+                    playButton.innerHTML = playSvg;
+                    return;
+                }
+                const langCode = playButton.dataset.langCode;
+                if (wavBlobs[langCode]) {
+                    try { await cardAudioPlayer.play(); playButton.innerHTML = pauseSvg; } 
+                    catch { showErrorMessage('瀏覽器阻止了自動播放。'); }
+                    return;
+                }
+                
+                const currentTitle = card.querySelector('[data-field="title"]').textContent.trim();
+                const currentBody = card.querySelector('[data-field="body"]').textContent.trim().replace(/<br>/g, ' ');
+                const textForSpeech = `${currentTitle}。 ${currentBody}`;
+                
+                playButton.disabled = true;
+                playButton.innerHTML = loadingSvg;
+                
+                try {
+                    await playAudioWithGemini(textForSpeech, langCode, voiceName, cardAudioPlayer);
+                    downloadButton.disabled = false;
+                    try { await cardAudioPlayer.play(); playButton.innerHTML = pauseSvg; } 
+                    catch { playButton.innerHTML = playSvg; }
+                } catch (error) {
+                    showErrorMessage(error.message);
+                    playButton.innerHTML = playSvg;
+                } finally {
+                    playButton.disabled = false;
+                }
+            });
+
+            downloadButton.addEventListener('click', () => {
+                const langCode = playButton.dataset.langCode;
+                const blob = wavBlobs[langCode];
+                if (blob) {
+                    const title = titleInput.value.trim() || 'RTI-News';
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = `${title}_${langCode}.wav`;
+                    a.click();
+                    URL.revokeObjectURL(a.href);
+                }
+            });
+
+            cardAudioPlayer.onended = () => { playButton.innerHTML = playSvg; };
+        }
+        
+        // 語音生成 API 呼叫
+        async function playAudioWithGemini(text, langCode, voiceName, audioPlayer) {
+            const payload = {
+                contents: [{ parts: [{ text: text }] }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: voiceName }
+                        }
+                    }
+                }
+            };
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${API_KEY}`;
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(`API error: ${response.statusText} (${errorText})`);
+                }
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType) {
+                    // 解析 sampleRate (預設 24000)
+                    const sampleRateMatch = mimeType.match(/rate=(\d+)/);
+                    const sampleRate = sampleRateMatch ? parseInt(sampleRateMatch[1], 10) : 24000;
+                    
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const wavBlob = pcmToWav(new Int16Array(pcmData), sampleRate);
+                    
+                    wavBlobs[langCode] = wavBlob;
+                    if (audioPlayer.src) URL.revokeObjectURL(audioPlayer.src);
+                    audioPlayer.src = URL.createObjectURL(wavBlob);
+                    audioPlayer.load();
+                } else {
+                    throw new Error("無法取得音訊資料，請確認模型是否支援語音輸出。");
+                }
+            } catch (error) {
+                console.error('語音生成失敗:', error);
+                throw error;
+            }
+        }
+
+        // 綁定全域按鈕事件
+        translateButton.addEventListener('click', translateTextAndDisplay);
+        selectAllButton.addEventListener('click', () => document.querySelectorAll('#language-select-container input').forEach(c => c.checked = true));
+        clearAllButton.addEventListener('click', () => document.querySelectorAll('#language-select-container input').forEach(c => c.checked = false));
+    </script>
+</body>
+</html>
